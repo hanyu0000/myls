@@ -88,6 +88,7 @@ int main(int argc, char **argv){
     }
     if (flag == 0)
         do_ls(".");
+    printf("\n");
     return 0;
 }
 void do_ls(char *dirname){
