@@ -269,7 +269,7 @@ void print_fileinfo(const Fileinfo fileinfo){
     print_filename(fileinfo.filename, fileinfo.info.st_mode);
     if (S_ISLNK(fileinfo.info.st_mode) && has_l)
         printf(" -> %s", fileinfo.targetpath);
-    printf("\t");
+    printf("\n");
 }
 // 染色文件名
 void print_filename(char *filename, mode_t filemode) {
