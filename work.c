@@ -102,10 +102,10 @@ void do_ls(char *dirname){
     }
     // 存储信息
     for (int i = 0; i < file_cnt; i++){
-        char pathname[256];
+        char pathname[512];
         strcpy(pathname, dirname);
         strcat(pathname, "/");
-        strcat(pathname, fileinfo[i].filename);
+        strncat(pathname, fileinfo[i].filename, sizeof(pathname) - strlen(pathname) - 1);
         if (lstat(pathname, &fileinfo[i].info) == -1){
             perror("获取信息失败");
             continue;
