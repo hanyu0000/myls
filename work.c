@@ -108,7 +108,7 @@ void do_ls(char *dirname){
         strcat(pathname, fileinfo[i].filename);
         if (lstat(pathname, &fileinfo[i].info) == -1){
             perror("获取信息失败");
-            exit(EXIT_FAILURE);
+            continue;
         }
     }
     // 排序
@@ -130,13 +130,13 @@ void do_ls(char *dirname){
     if (has_R){
         for (int i = 0; i < file_cnt; i++){
             if (S_ISDIR(fileinfo[i].info.st_mode)){
-                if (!strcmp(fileinfo[i].filename, ".") || !strcmp(fileinfo[i].filename, ".."))
+                if (strcmp(fileinfo[i].filename, ".") == 0|| strcmp(fileinfo[i].filename, "..") == 0)
                     continue;
-                char pathname[256];
+                char pathname[512];
                 strcpy(pathname, dirname);
                 strcat(pathname, "/");
-                strcat(pathname, fileinfo[i].filename);
-                printf("\n%s: \n", pathname);
+                strncat(pathname, fileinfo[i].filename, sizeof(pathname) - strlen(pathname) - 1);
+                printf("\n%s:\n", pathname);
                 do_ls(pathname);
             }
         }
