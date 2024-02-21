@@ -29,7 +29,6 @@ int compare();
 int compare_t();
 void print_fileinfo();
 void print_filename();
-
 int has_a = 0;
 int has_l = 0;
 int has_R = 0;
@@ -37,7 +36,6 @@ int has_t = 0;
 int has_r = 0;
 int has_i = 0;
 int has_s = 0; 
-
 int main(int argc, char **argv){
     for (int i = 1; i < argc; i++){
         if (argv[i][0] == '-'){
@@ -70,7 +68,6 @@ int main(int argc, char **argv){
             }
         }
     }
-    // 遍历目录名，针对每个目录做ls操作
     int flag = 0;
     for (int i = 1; i < argc; i++){
         if (argv[i][0] != '-'){
@@ -101,21 +98,17 @@ void do_ls(char *dirname){
         while ((cur_dirent = readdir(dir_ptr)) != NULL){
             if (!has_a && *(cur_dirent->d_name) == '.')
                 continue;
-            fileinfo[file_cnt++].filename = cur_dirent->d_name;
+            fileinfo[file_cnt++].filename = strdup(cur_dirent->d_name);
         }
     }
-    // 存储信息
     for (int i = 0; i < file_cnt; i++){
         char pathname[512];
-        strcpy(pathname, dirname);
-        strcat(pathname, "/");
-        strncat(pathname, fileinfo[i].filename, sizeof(pathname) - strlen(pathname) - 1);
+        snprintf(pathname, sizeof(pathname), "%s/%s", dirname, fileinfo[i].filename); 
         if (lstat(pathname, &fileinfo[i].info) == -1){
             perror("获取信息失败");
             continue;
         }
     }
-    // 排序
     if (has_t)
         qsort(fileinfo, file_cnt, sizeof(Fileinfo), compare_t);
     else
@@ -128,26 +121,25 @@ void do_ls(char *dirname){
             fileinfo[right--] = temp;
         }
     }
-    // 打印信息
     for (int i = 0; i < file_cnt; i++)
         print_fileinfo(fileinfo[i]);
     if (has_R){
         for (int i = 0; i < file_cnt; i++){
             if (S_ISDIR(fileinfo[i].info.st_mode)){
-                if (strcmp(fileinfo[i].filename, ".") == 0|| strcmp(fileinfo[i].filename, "..") == 0)
+                if (strcmp(fileinfo[i].filename, ".") != 0 && strcmp(fileinfo[i].filename, "..") != 0)
                     continue;
                 char pathname[512];
-                strcpy(pathname, dirname);
-                strcat(pathname, "/");
-                strncat(pathname, fileinfo[i].filename, sizeof(pathname) - strlen(pathname) - 1);
+                snprintf(pathname, sizeof(pathname), "%s/%s", dirname, fileinfo[i].filename);
                 printf("\n%s:\n", pathname);
                 do_ls(pathname);
             }
         }
     }
     closedir(dir_ptr);
+    for (int i = 0; i < file_cnt; ++i)
+        free(fileinfo[i].filename);
+    free(fileinfo);
 }
-//比较函数
 int compare(const void *a, const void *b){
     Fileinfo *_a = (Fileinfo *)a;
     Fileinfo *_b = (Fileinfo *)b;
@@ -158,7 +150,6 @@ int compare_t(const void *a, const void *b){
     Fileinfo *_b = (Fileinfo *)b;
     return _a->info.st_mtime < _b->info.st_mtime;
 }
-// 将权限转换为字符串
 void mode_letters(mode_t num, char *mode) {
     strcpy(mode, "----------");
     switch (num & __S_IFMT){
@@ -184,7 +175,6 @@ void mode_letters(mode_t num, char *mode) {
         mode[0] = 'l';
         break;
     }
-    // 权限-i
     if (num & S_IRUSR)
         mode[1] = 'r';
     if (num & S_IWUSR)
@@ -206,7 +196,6 @@ void mode_letters(mode_t num, char *mode) {
 
     mode[10] = '\0';
 }
-
 void print_fileinfo(const Fileinfo fileinfo){
     if (has_i)
         printf("%-8lu ", fileinfo.info.st_ino);
@@ -234,7 +223,6 @@ void print_fileinfo(const Fileinfo fileinfo){
     print_filename(fileinfo.filename, fileinfo.info.st_mode);
     printf("\n");
 }
-// 染色文件名
 void print_filename(char *filename, mode_t filemode) {
     if (S_ISDIR(filemode))
         printf("\033[01;34m%s\033[0m", filename);
