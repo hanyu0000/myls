@@ -25,6 +25,7 @@ typedef struct{
     struct stat info;
 } Fileinfo;
 void do_ls();
+void list_files(const char *dirname, int has_a, int has_t, int has_r, int has_R);
 int compare();
 int compare_t();
 void print_fileinfo();
@@ -124,21 +125,44 @@ void do_ls(char *dirname){
     for (int i = 0; i < file_cnt; i++)
         print_fileinfo(fileinfo[i]);
     if (has_R){
-        for (int i = 0; i < file_cnt; i++){
-            if (S_ISDIR(fileinfo[i].info.st_mode)){
-                if (strcmp(fileinfo[i].filename, ".") != 0 && strcmp(fileinfo[i].filename, "..") != 0)
-                    continue;
-                char pathname[512];
-                snprintf(pathname, sizeof(pathname), "%s/%s", dirname, fileinfo[i].filename);
-                printf("\n%s:\n", pathname);
-                do_ls(pathname);
-            }
-        }
+        list_files(dirname, has_a, has_t, has_r, has_R);
     }
     closedir(dir_ptr);
     for (int i = 0; i < file_cnt; ++i)
         free(fileinfo[i].filename);
     free(fileinfo);
+}
+void list_files(const char *dirname, int has_a, int has_t, int has_r, int has_R) {
+    DIR *dir_ptr;
+    struct dirent *cur_dirent;
+
+    if ((dir_ptr = opendir(dirname)) == NULL) {
+        perror("打开文件夹失败");
+        exit(EXIT_FAILURE);
+    }
+
+    while ((cur_dirent = readdir(dir_ptr)) != NULL) {
+        char pathname[512];
+        snprintf(pathname, sizeof(pathname), "%s/%s", dirname, cur_dirent->d_name);
+
+        if (!has_a && *(cur_dirent->d_name) == '.')
+            continue;
+
+        struct stat statbuf;
+        if (lstat(pathname, &statbuf) == -1) {
+            perror("获取信息失败");
+            continue;
+        }
+
+        if (S_ISDIR(statbuf.st_mode)) {
+            if (strcmp(cur_dirent->d_name, ".") != 0 && strcmp(cur_dirent->d_name, "..") != 0) {
+                printf("\n%s:\n", pathname);
+                do_ls(pathname);
+            }
+        }
+    }
+
+    closedir(dir_ptr);
 }
 int compare(const void *a, const void *b){
     Fileinfo *_a = (Fileinfo *)a;
