@@ -85,7 +85,11 @@ int main(int argc, char **argv){
     return 0;
 }
 void do_ls(char *dirname){
-    Fileinfo fileinfo[4096];
+    Fileinfo *fileinfo = malloc(sizeof(Fileinfo) * 10000);
+    if (fileinfo == NULL){
+        perror("内存分配失败");
+        exit(EXIT_FAILURE);
+    }
     int file_cnt = 0;
     DIR *dir_ptr;
     struct dirent *cur_dirent;
