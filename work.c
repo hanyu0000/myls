@@ -71,7 +71,9 @@ int main(int argc, char **argv){
     for (int i = 1; i < argc; i++){
         if (argv[i][0] != '-'){
             flag = 1;
-            do_ls(argv[i]);
+            char path[256];
+            realpath(argv[i],path);
+            do_ls(path);
         }
     }
     if (flag == 0)
