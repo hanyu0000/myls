@@ -63,8 +63,6 @@ int main(int argc, char **argv){
                 case 's':
                     has_s = 1;
                     break;
-                default:
-                    perror("ls:不适用的选项\n请尝试执行 \"ls --help\" 来获取更多信息");
                 }
             }
         }
@@ -73,12 +71,12 @@ int main(int argc, char **argv){
     for (int i = 1; i < argc; i++){
         if (argv[i][0] != '-'){
             flag = 1;
-            printf("%s:\n", argv[i]);
             do_ls(argv[i]);
         }
     }
     if (flag == 0)
         do_ls(".");
+
     printf("\n");
     return 0;
 }
@@ -110,10 +108,6 @@ void do_ls(char *dirname){
             continue;
         }
     }
-    if (has_t)
-        qsort(fileinfo, file_cnt, sizeof(Fileinfo), compare_t);
-    else
-        qsort(fileinfo, file_cnt, sizeof(Fileinfo), compare);
     if (has_r){
         int left = 0, right = file_cnt - 1;
         while (left < right){
@@ -122,12 +116,18 @@ void do_ls(char *dirname){
             fileinfo[right--] = temp;
         }
     }
+    if (has_t)
+        qsort(fileinfo, file_cnt, sizeof(Fileinfo), compare_t);
+    else
+        qsort(fileinfo, file_cnt, sizeof(Fileinfo), compare);
+    
     for (int i = 0; i < file_cnt; i++)
         print_fileinfo(fileinfo[i]);
     if (has_R){
         list_files(dirname, has_a, has_t, has_r, has_R);
     }
     closedir(dir_ptr);
+    
     for (int i = 0; i < file_cnt; ++i)
         free(fileinfo[i].filename);
     free(fileinfo);
@@ -161,41 +161,40 @@ void list_files(const char *dirname, int has_a, int has_t, int has_r, int has_R)
             }
         }
     }
-
     closedir(dir_ptr);
 }
 int compare(const void *a, const void *b){
-    Fileinfo *_a = (Fileinfo *)a;
-    Fileinfo *_b = (Fileinfo *)b;
-    return strcmp(_a->filename, _b->filename);
+    Fileinfo *i = (Fileinfo *)a;
+    Fileinfo *j = (Fileinfo *)b;
+    return strcmp(i->filename, j->filename);
 }
 int compare_t(const void *a, const void *b){
-    Fileinfo *_a = (Fileinfo *)a;
-    Fileinfo *_b = (Fileinfo *)b;
-    return _a->info.st_mtime < _b->info.st_mtime;
+    Fileinfo *i = (Fileinfo *)a;
+    Fileinfo *j = (Fileinfo *)b;
+    return i->info.st_mtime < j->info.st_mtime;
 }
 void mode_letters(mode_t num, char *mode) {
     strcpy(mode, "----------");
     switch (num & __S_IFMT){
-    case __S_IFREG: /* Regular file.  */
+    case __S_IFREG: 
         mode[0] = '-';
         break;
-    case __S_IFDIR: /* Directory.  */
+    case __S_IFDIR: 
         mode[0] = 'd';
         break;
-    case __S_IFCHR: /* Character device.  */
+    case __S_IFCHR: 
         mode[0] = 'c';
         break;
-    case __S_IFBLK: /* Block device.  */
+    case __S_IFBLK: 
         mode[0] = 'b';
         break;
-    case __S_IFIFO: /* FIFO.  */
+    case __S_IFIFO:
         mode[0] = 'p';
         break;
-    case __S_IFSOCK: /* Socket.  */
+    case __S_IFSOCK: 
         mode[0] = 's';
         break;
-    case __S_IFLNK: /* Symbolic link.  */
+    case __S_IFLNK:
         mode[0] = 'l';
         break;
     }
@@ -217,33 +216,27 @@ void mode_letters(mode_t num, char *mode) {
         mode[8] = 'w';
     if (num & S_IXOTH)
         mode[9] = 'x';
-
     mode[10] = '\0';
 }
 void print_fileinfo(const Fileinfo fileinfo){
     if (has_i)
-        printf("%-8lu ", fileinfo.info.st_ino);
+        printf("%-8lu  ", fileinfo.info.st_ino);
     if (has_s)
-        printf("%-8ld ", (long)fileinfo.info.st_size/1024);
+        printf("%-8ld  ", (long)fileinfo.info.st_size/1024);
     if (has_l){
         char mode[11];
         mode_letters(fileinfo.info.st_mode, mode);
-        printf("%s ", mode);
-
-        printf("%-2d ", (int)fileinfo.info.st_nlink); // 打印链接数
-
+        printf("%s  ", mode);
+        printf("%-2d  ", (int)fileinfo.info.st_nlink);
         struct passwd *user;
         user = getpwuid(fileinfo.info.st_uid);
-        printf("%s ", user->pw_name); // 打印用户名
-
+        printf("%s  ", user->pw_name); 
         struct group *gp;
         gp = getgrgid(fileinfo.info.st_gid);
-        printf("%s ", gp->gr_name); // 打印组名
-
-        printf("%-10ld ", fileinfo.info.st_size);             // 打印文件大小
-        printf("%.12s ", ctime(&fileinfo.info.st_mtime) + 4); // 打印时间
+        printf("%s  ", gp->gr_name);
+        printf("%-10ld  ", fileinfo.info.st_size);             
+        printf("%.12s  ", ctime(&fileinfo.info.st_mtime) + 4); 
     }
-
     print_filename(fileinfo.filename, fileinfo.info.st_mode);
     printf("\n");
 }
